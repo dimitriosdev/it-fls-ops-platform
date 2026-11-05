@@ -53,7 +53,9 @@ app/
     styles.css
 src/
   client/
-    app.ts
+    app/
+      state.ts, utils.ts, i18n.ts, ui.ts, shell.ts, main.ts
+      pages/
     leader.ts
     data/
       reference-data.ts
@@ -66,8 +68,12 @@ src/
 - `app/layout.tsx` contains the document metadata and shared stylesheet import.
 - `src/client/data/reference-data.ts` contains shared demo lists.
 - `src/client/data/seed-data.ts` contains the initial incident records.
-- `src/client/app.ts` contains the existing incident workflows.
+- `src/client/app/` contains the incident workflows, split by concern: `state`, `utils`,
+  `i18n`, `ui` (shared HTML helpers), `shell` (nav/topbar/render), `pages/*` (one file
+  per screen) and `main` (router + first render).
 - `src/client/leader.ts` contains the team-leader reporting workflows.
+- Scripts in `src/client/` are classic global scripts (no imports). Their load order is
+  listed in `app/page.tsx`; `app/main.ts` must stay last.
 - TypeScript browser scripts are compiled to ignored `public/generated/js/` assets before Next.js runs.
 - `assets/css/styles.css` contains the page styles.
 
