@@ -19,6 +19,19 @@ The browser-only workflow scripts are compiled from TypeScript before `dev`,
 `build`, and `start`. Format TypeScript with `npm run format` and check it with
 `npm run format:check`.
 
+## Quality, commits and releases
+
+- `npm run lint`, `npm run typecheck`, `npm run format:check` run in CI
+  (`.github/workflows/ci.yml`) together with `npm run build`.
+- Commits follow [Conventional Commits](https://www.conventionalcommits.org/),
+  enforced by commitlint via a Husky `commit-msg` hook. Use `npm run commit`
+  (Commitizen) for a guided prompt. A `pre-commit` hook formats staged files.
+- `npm run release` bumps the version in `package.json` from the commit history
+  (`feat` → minor, `fix` → patch, `BREAKING CHANGE` → major), updates
+  `CHANGELOG.md`, commits and tags. Use `npm run release -- --first-release`
+  for the first tag, then `git push --follow-tags`.
+- Set `STATS_PIN` (see `.env.example`) to enable the `/stats` page.
+
 ## Project structure
 
 ```text
@@ -28,7 +41,14 @@ app/
   components/
     AppShell.tsx
     UserMenu.tsx
-assets/
+  stats/
+    page.tsx            # composes the stats page
+    useStatsData.ts     # PIN unlock, fetching, filtering state
+    useLang.ts          # persisted language preference
+    LangContext.tsx, theme.ts, i18n.ts, aggregate.ts
+    components/         # Dashboard, Filters, PinGate, Panels, LangToggle
+      charts/           # HBar, Columns, Donut, LineChart, Heatmap
+
   css/
     styles.css
 src/

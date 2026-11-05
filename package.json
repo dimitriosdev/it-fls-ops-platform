@@ -12,7 +12,12 @@
     "prestart": "npm run build:client",
     "start": "next start",
     "format": "prettier --write \"app/**/*.{ts,tsx}\" \"src/client/**/*.ts\"",
-    "format:check": "prettier --check \"app/**/*.{ts,tsx}\" \"src/client/**/*.ts\""
+    "format:check": "prettier --check \"app/**/*.{ts,tsx}\" \"src/client/**/*.ts\"",
+    "commit": "cz",
+    "release": "commit-and-tag-version",
+    "lint": "next lint",
+    "typecheck": "tsc --noEmit && tsc -p tsconfig.client.json --noEmit",
+    "prepare": "husky"
   },
   "dependencies": {
     "next": "^15.2.4",
@@ -20,9 +25,29 @@
     "react-dom": "^19.0.0"
   },
   "devDependencies": {
+    "@commitlint/cli": "^21.2.4",
+    "@commitlint/config-conventional": "^21.2.4",
     "@types/node": "20.17.6",
     "@types/react": "19.3.0",
+    "commit-and-tag-version": "^13.3.0",
+    "commitizen": "^4.3.2",
+    "cz-conventional-changelog": "^3.3.0",
+    "eslint": "^9.39.5",
+    "eslint-config-next": "^15.5.29",
+    "husky": "^9.1.7",
+    "lint-staged": "^17.6.0",
     "prettier": "^3.5.3",
     "typescript": "5.8.2"
+  },
+  "config": {
+    "commitizen": {
+      "path": "cz-conventional-changelog"
+    }
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "lint-staged": {
+    "*.{ts,tsx,json,md,css}": "prettier --write"
   }
 }
