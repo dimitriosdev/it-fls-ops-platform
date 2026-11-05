@@ -30,52 +30,23 @@ The browser-only workflow scripts are compiled from TypeScript before `dev`,
   (`feat` → minor, `fix` → patch, `BREAKING CHANGE` → major), updates
   `CHANGELOG.md`, commits and tags. Use `npm run release -- --first-release`
   for the first tag, then `git push --follow-tags`.
-- Set `STATS_PIN` (see `.env.example`) to enable the `/stats` page.
 
 ## Project structure
 
 ```text
 app/
-  layout.tsx
-  page.tsx
-  components/
-    AppShell.tsx
-    UserMenu.tsx
-  stats/
-    page.tsx            # composes the stats page
-    useStatsData.ts     # PIN unlock, fetching, filtering state
-    useLang.ts          # persisted language preference
-    LangContext.tsx, theme.ts, i18n.ts, aggregate.ts
-    components/         # Dashboard, Filters, PinGate, Panels, LangToggle
-      charts/           # HBar, Columns, Donut, LineChart, Heatmap
-
-  css/
-    styles.css
+  layout.tsx, page.tsx      # page.tsx redirects to /dashboard
+  login/, logout/           # local email + password (Neon Auth)
+  (app)/                    # authenticated shell (sidebar, topbar)
+    dashboard/, tickets/, admin/, support/
+  stats/                    # staff-only statistics (server gate + client charts)
 src/
-  client/
-    app/
-      state.ts, utils.ts, i18n.ts, ui.ts, shell.ts, main.ts
-      pages/
-    leader.ts
-    data/
-      reference-data.ts
-      seed-data.ts
+  lib/                      # prisma singleton, auth, role helpers, i18n
+  server/                   # queries.ts (reads), tickets.ts, users.ts (writes)
+prisma/                     # schema, migrations, seed, ticket import
 ```
 
-- `app/page.tsx` provides the Next.js page shell and loads the browser-only demo.
-- `app/components/AppShell.tsx` contains the shared sidebar, top bar, and shell components.
-- `app/components/UserMenu.tsx` contains the user menu and its display preferences.
-- `app/layout.tsx` contains the document metadata and shared stylesheet import.
-- `src/client/data/reference-data.ts` contains shared demo lists.
-- `src/client/data/seed-data.ts` contains the initial incident records.
-- `src/client/app/` contains the incident workflows, split by concern: `state`, `utils`,
-  `i18n`, `ui` (shared HTML helpers), `shell` (nav/topbar/render), `pages/*` (one file
-  per screen) and `main` (router + first render).
-- `src/client/leader.ts` contains the team-leader reporting workflows.
-- Scripts in `src/client/` are classic global scripts (no imports). Their load order is
-  listed in `app/page.tsx`; `app/main.ts` must stay last.
-- TypeScript browser scripts are compiled to ignored `public/generated/js/` assets before Next.js runs.
+- Pages are React Server Components reading from PostgreSQL via `src/server/queries.ts`;
+  writes go through Server Actions that call `src/server/tickets.ts` / `users.ts`.
+- `/admin` is ADMIN only; `/support` and `/stats` are ADMIN and SUPPORTER; the rest needs a login.
 - `assets/css/styles.css` contains the page styles.
-
-This is a demo without a backend, authentication, or access control. Changes
-are saved only in the current browser.

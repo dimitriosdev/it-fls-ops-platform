@@ -1,0 +1,152 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum UserRole {
+  ADMIN
+  SUPPORTER
+  REPORTER
+}
+
+enum TicketStatus {
+  NEW
+  IN_PROGRESS
+  RESOLVED
+  CLOSED
+}
+
+enum TicketHistoryAction {
+  CREATED
+  ASSIGNED
+  STATUS_CHANGED
+  RESOLVED
+  CLOSED
+  REOPENED
+}
+
+enum NotificationType {
+  TICKET_ASSIGNED
+  TICKET_STATUS_CHANGED
+  TICKET_RESOLVED
+  TICKET_CLOSED
+  GENERAL
+}
+
+model User {
+  id                  String          @id @default(cuid())
+  email               String          @unique @db.VarChar(320)
+  name                String          @db.VarChar(200)
+  role                UserRole        @default(REPORTER)
+  isActive            Boolean         @default(true)
+  createdAt           DateTime        @default(now())
+  updatedAt           DateTime        @updatedAt
+  reportedTickets     Ticket[]        @relation("TicketReporter")
+  assignedTickets     Ticket[]        @relation("TicketAssignee")
+  historyEntries      TicketHistory[] @relation("HistoryActor")
+  uploadedAttachments Attachment[]    @relation("AttachmentUploader")
+  notifications       Notification[]
+
+  @@index([role, isActive])
+  @@map("users")
+}
+
+model Workplace {
+  id        String   @id @default(cuid())
+  name      String   @unique @db.VarChar(200)
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  tickets   Ticket[]
+}
+
+model Category {
+  id        String   @id @default(cuid())
+  name      String   @unique @db.VarChar(120)
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  tickets   Ticket[]
+}
+
+model Ticket {
+  id                  String          @id @default(cuid())
+  ticketNumber        Int             @unique @default(autoincrement())
+  sourceMessageId     String?         @unique
+  reporterId          String
+  assignedSupporterId String?
+  workplaceId         String
+  categoryId          String
+  description         String          @db.Text
+  status              TicketStatus    @default(NEW)
+  resolutionType      String?         @db.VarChar(120)
+  resolutionText      String?         @db.Text
+  timeSpentMinutes    Int?
+  externalFollowup    Boolean         @default(false)
+  externalPerson      String?         @db.VarChar(120)
+  externalNotes       String?         @db.Text
+  createdAt           DateTime        @default(now())
+  updatedAt           DateTime        @updatedAt
+  resolvedAt          DateTime?
+  closedAt            DateTime?
+  reporter            User            @relation("TicketReporter", fields: [reporterId], references: [id])
+  assignedSupporter   User?           @relation("TicketAssignee", fields: [assignedSupporterId], references: [id])
+  workplace           Workplace       @relation(fields: [workplaceId], references: [id])
+  category            Category        @relation(fields: [categoryId], references: [id])
+  history             TicketHistory[]
+  attachments         Attachment[]
+  notifications       Notification[]
+
+  @@index([status, createdAt])
+  @@index([reporterId])
+  @@index([assignedSupporterId])
+  @@index([workplaceId, categoryId])
+}
+
+model TicketHistory {
+  id         String              @id @default(cuid())
+  ticketId   String
+  actorId    String?
+  action     TicketHistoryAction
+  fromStatus TicketStatus?
+  toStatus   TicketStatus?
+  details    String?             @db.Text
+  occurredAt DateTime            @default(now())
+  ticket     Ticket              @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  actor      User?               @relation("HistoryActor", fields: [actorId], references: [id], onDelete: SetNull)
+
+  @@index([ticketId, occurredAt])
+  @@index([actorId])
+}
+
+model Attachment {
+  id           String   @id @default(cuid())
+  ticketId     String
+  uploadedById String?
+  filename     String   @db.VarChar(255)
+  url          String   @db.Text
+  uploadedAt   DateTime @default(now())
+  ticket       Ticket   @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  uploadedBy   User?    @relation("AttachmentUploader", fields: [uploadedById], references: [id], onDelete: SetNull)
+
+  @@index([ticketId, uploadedAt])
+}
+
+model Notification {
+  id        String           @id @default(cuid())
+  userId    String
+  ticketId  String?
+  type      NotificationType @default(GENERAL)
+  message   String           @db.Text
+  readAt    DateTime?
+  createdAt DateTime         @default(now())
+  user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  ticket    Ticket?          @relation(fields: [ticketId], references: [id], onDelete: SetNull)
+
+  @@index([userId, readAt, createdAt])
+  @@index([ticketId])
+}
