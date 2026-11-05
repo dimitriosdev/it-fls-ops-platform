@@ -1,0 +1,14 @@
+{
+  "compilerOptions": {
+    "target": "ES2017",
+    "lib": ["dom", "esnext"],
+    "module": "none",
+    "strict": false,
+    "noEmit": false,
+    "noEmitOnError": true,
+    "skipLibCheck": true,
+    "outDir": "public/generated/js",
+    "rootDir": "src/client"
+  },
+  "include": ["src/client/**/*.ts"]
+}

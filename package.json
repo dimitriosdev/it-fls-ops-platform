@@ -1,0 +1,28 @@
+{
+  "name": "it-support-platform-demo",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "build:client": "tsc -p tsconfig.client.json",
+    "build:stats": "node scripts/build-stats.mjs",
+    "predev": "npm run build:client",
+    "dev": "next dev",
+    "prebuild": "npm run build:client",
+    "build": "next build",
+    "prestart": "npm run build:client",
+    "start": "next start",
+    "format": "prettier --write \"app/**/*.{ts,tsx}\" \"src/client/**/*.ts\"",
+    "format:check": "prettier --check \"app/**/*.{ts,tsx}\" \"src/client/**/*.ts\""
+  },
+  "dependencies": {
+    "next": "^15.2.4",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "20.17.6",
+    "@types/react": "19.3.0",
+    "prettier": "^3.5.3",
+    "typescript": "5.8.2"
+  }
+}
