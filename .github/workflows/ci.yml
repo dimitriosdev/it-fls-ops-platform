@@ -19,8 +19,14 @@ jobs:
       - run: npm ci
       - run: npx commitlint --from=${{ github.event.pull_request.base.sha || 'HEAD~1' }} --to=HEAD
       - run: npm run format:check
+      - run: npm run db:generate
+        env:
+          DIRECT_URL: postgresql://ci:ci@localhost:5432/ci
       - run: npm run typecheck
       - run: npm run lint
       - run: npm run build
         env:
           STATS_PIN: ci-placeholder
+          DATABASE_URL: postgresql://ci:ci@localhost:5432/ci
+          NEON_AUTH_BASE_URL: https://ci.invalid/neondb/auth
+          NEON_AUTH_COOKIE_SECRET: ci-placeholder-secret-at-least-32-characters
