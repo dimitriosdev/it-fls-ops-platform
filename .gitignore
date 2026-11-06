@@ -3,6 +3,7 @@ node_modules/
 out/
 build/
 public/generated/
+src/generated/prisma/
 *.tsbuildinfo
 data/reported_issues_*.json
 .env*

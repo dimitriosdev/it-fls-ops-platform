@@ -1,8 +1,22 @@
-import { FlatCompat } from "@eslint/eslintrc";
-
-const compat = new FlatCompat({ baseDirectory: import.meta.dirname });
+import nextVitals from "eslint-config-next/core-web-vitals";
+import nextTs from "eslint-config-next/typescript";
 
 export default [
-  { ignores: [".next/**", "public/generated/**", "node_modules/**", "scripts/**", "src/client/**"] },
-  ...compat.extends("next/core-web-vitals", "next/typescript"),
+  ...nextVitals,
+  ...nextTs,
+  {
+    ignores: [
+      ".next/**",
+      "public/generated/**",
+      "node_modules/**",
+      "scripts/**",
+      "src/client/**",
+    ],
+  },
+  {
+    rules: {
+      "react-hooks/immutability": "off",
+      "react-hooks/set-state-in-effect": "off",
+    },
+  },
 ];

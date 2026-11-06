@@ -3,40 +3,49 @@
   "version": "1.0.0",
   "private": true,
   "scripts": {
-    "build:client": "tsc -p tsconfig.client.json",
-    "build:stats": "node scripts/build-stats.mjs",
-    "predev": "npm run build:client",
+    "predev": "npm run db:generate",
     "dev": "next dev",
-    "prebuild": "npm run build:client",
+    "prebuild": "npm run db:generate",
     "build": "next build",
-    "prestart": "npm run build:client",
+    "db:generate": "prisma generate",
+    "db:seed": "prisma db seed",
     "start": "next start",
-    "format": "prettier --write \"app/**/*.{ts,tsx}\" \"src/client/**/*.ts\"",
-    "format:check": "prettier --check \"app/**/*.{ts,tsx}\" \"src/client/**/*.ts\"",
+    "format": "prettier --write \"app/**/*.{ts,tsx}\"",
+    "format:check": "prettier --check \"app/**/*.{ts,tsx}\"",
     "commit": "cz",
     "release": "commit-and-tag-version",
-    "lint": "next lint",
-    "typecheck": "tsc --noEmit && tsc -p tsconfig.client.json --noEmit",
-    "prepare": "husky"
+    "lint": "eslint .",
+    "typecheck": "tsc --noEmit",
+    "prepare": "husky",
+    "db:import-tickets": "tsx prisma/import-tickets.ts"
   },
   "dependencies": {
-    "next": "^15.2.4",
+    "@neon/auth": "^0.8.2",
+    "@neondatabase/serverless": "^1.2.0",
+    "@prisma/adapter-neon": "^7.10.1",
+    "@prisma/client": "^7.10.1",
+    "next": "^16.4.5",
     "react": "^19.0.0",
-    "react-dom": "^19.0.0"
+    "react-dom": "^19.0.0",
+    "zod": "^4.6.7"
   },
   "devDependencies": {
     "@commitlint/cli": "^21.2.4",
     "@commitlint/config-conventional": "^21.2.4",
     "@types/node": "20.17.6",
     "@types/react": "19.3.0",
+    "@types/react-dom": "^19.3.0",
     "commit-and-tag-version": "^13.3.0",
     "commitizen": "^4.3.2",
     "cz-conventional-changelog": "^3.3.0",
+    "dotenv": "^18.0.9",
     "eslint": "^9.39.5",
-    "eslint-config-next": "^15.5.29",
+    "eslint-config-next": "^16.4.5",
     "husky": "^9.1.7",
     "lint-staged": "^17.6.0",
     "prettier": "^3.5.3",
+    "prisma": "^7.10.1",
+    "tsx": "^4.23.15",
     "typescript": "5.8.2"
   },
   "config": {
@@ -45,9 +54,15 @@
     }
   },
   "engines": {
-    "node": ">=20"
+    "node": "^20.19.0 || ^22.12.0 || >=24.0.0"
   },
   "lint-staged": {
     "*.{ts,tsx,json,md,css}": "prettier --write"
+  },
+  "allowScripts": {
+    "@prisma/client@7.10.1": true,
+    "prisma@7.10.1": true,
+    "@prisma/engines@7.10.1": true,
+    "esbuild@0.28.2": true
   }
 }
