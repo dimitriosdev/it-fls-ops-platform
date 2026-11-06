@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { UserRole } from "@/src/generated/prisma/enums";
 import { requireAdmin } from "@/src/lib/auth/authorization";
+import { isAllowedEmailDomain } from "@/src/lib/auth/email-domain";
 import { neonAdmin } from "@/src/lib/auth/neon-admin";
 import { prisma } from "@/src/lib/prisma";
 
@@ -51,6 +52,9 @@ export async function createUser(input: unknown): Promise<ActionResult> {
   const parsed = createUserSchema.safeParse(input);
   if (!parsed.success) return fail("Invalid input.");
   const data = parsed.data;
+  if (!isAllowedEmailDomain(data.email)) {
+    return fail("Only @digitecgalaxus.ch email addresses are allowed.");
+  }
 
   if (
     await prisma.user.findUnique({ where: { email: data.email }, select: { id: true } })
@@ -64,7 +68,10 @@ export async function createUser(input: unknown): Promise<ActionResult> {
     password: data.password,
     name: data.name,
   });
-  if (error) return fail("Could not create the login account.");
+  if (error) {
+    console.error("neonAdmin.createUser failed:", error);
+    return fail(`Could not create the login account. (${error.message ?? error.code})`);
+  }
 
   await prisma.user.create({
     data: { email: data.email, name: data.name, role: data.role },

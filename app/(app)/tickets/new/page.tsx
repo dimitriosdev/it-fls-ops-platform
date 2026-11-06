@@ -19,7 +19,7 @@ export default async function NewTicketPage() {
           "Erfasse ein Problem in wenigen Schritten.",
           "Report an issue in just a few steps.",
         )}
-        back={{ href: "/tickets", label: pick(lang, "Ereignisse", "Incidents") }}
+        back={{ href: "/tickets", label: pick(lang, "Ereignisse", "Tickets") }}
       />
       <div className="card">
         <NewTicketForm

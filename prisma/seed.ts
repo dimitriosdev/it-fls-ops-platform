@@ -2,6 +2,7 @@ import "dotenv/config";
 import { createAuthClient } from "@neon/auth";
 import { BetterAuthVanillaAdapter } from "@neon/auth/vanilla/adapters";
 import { UserRole } from "../src/generated/prisma/enums";
+import { isAllowedEmailDomain } from "../src/lib/auth/email-domain";
 import { prisma } from "../src/lib/prisma";
 
 async function seedInitialAdmin(): Promise<void> {
@@ -15,6 +16,10 @@ async function seedInitialAdmin(): Promise<void> {
 
   if (!email) {
     throw new Error("ADMIN_EMAIL must be set.");
+  }
+
+  if (!isAllowedEmailDomain(email)) {
+    throw new Error("ADMIN_EMAIL must use the @digitecgalaxus.ch domain.");
   }
 
   if (!password || password.length < 12 || password.length > 128) {
@@ -50,7 +55,7 @@ async function seedInitialAdmin(): Promise<void> {
   const { error: signUpError } = await authClient.signUp.email({
     email,
     password,
-    name: "Dimitrios",
+    name: "Dimitrios Metozis",
   });
 
   if (signUpError) {
@@ -69,7 +74,7 @@ async function seedInitialAdmin(): Promise<void> {
   await prisma.user.create({
     data: {
       email,
-      name: "Dimitrios",
+      name: "Dimitrios Metozis",
       role: UserRole.ADMIN,
     },
   });

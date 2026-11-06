@@ -307,6 +307,73 @@ export async function addAttachment(input: unknown): Promise<TicketResult> {
 }
 
 const ticketIdSchema = z.object({ ticketId: id });
+const updateReporterDetailsSchema = z.object({
+  ticketId: id,
+  description: z.string().trim().min(5).max(5000),
+  workplace: z.string().trim().min(1).max(200),
+  category: z.string().trim().min(1).max(120),
+});
+
+class ReporterTicketUpdateRejected extends Error {}
+
+export async function updateReporterTicketDetails(input: unknown): Promise<TicketResult> {
+  const user = await requireUser();
+  const parsed = updateReporterDetailsSchema.safeParse(input);
+  if (!parsed.success) return fail("Invalid ticket details.");
+  if (user.role !== UserRole.REPORTER) {
+    return fail("Only reporters can edit ticket details.");
+  }
+  const { ticketId, description, workplace, category } = parsed.data;
+
+  try {
+    return await prisma.$transaction(async (tx) => {
+      const ticket = await tx.ticket.findFirst({
+        where: {
+          id: ticketId,
+          reporterId: user.id,
+          status: { in: [TicketStatus.NEW, TicketStatus.IN_PROGRESS] },
+        },
+        select: { ticketNumber: true },
+      });
+      if (!ticket) throw new ReporterTicketUpdateRejected();
+
+      const [workplaceRecord, categoryRecord] = await Promise.all([
+        tx.workplace.upsert({
+          where: { name: workplace },
+          update: {},
+          create: { name: workplace },
+        }),
+        tx.category.upsert({
+          where: { name: category },
+          update: {},
+          create: { name: category },
+        }),
+      ]);
+      const { count } = await tx.ticket.updateMany({
+        where: {
+          id: ticketId,
+          reporterId: user.id,
+          status: { in: [TicketStatus.NEW, TicketStatus.IN_PROGRESS] },
+        },
+        data: {
+          description,
+          workplaceId: workplaceRecord.id,
+          categoryId: categoryRecord.id,
+        },
+      });
+      if (count === 0) throw new ReporterTicketUpdateRejected();
+
+      const result = done(ticketId, ticket.ticketNumber);
+      revalidatePath(`/tickets/${ticket.ticketNumber}`);
+      return result;
+    });
+  } catch (error) {
+    if (error instanceof ReporterTicketUpdateRejected) {
+      return fail("Only your active tickets can be edited.");
+    }
+    throw error;
+  }
+}
 
 // The reporter marks their own open ticket as resolved (no supporter involved).
 export async function reporterResolveTicket(input: unknown): Promise<TicketResult> {

@@ -53,7 +53,16 @@ export default async function AdminPage({
             </div>
             <div className="field">
               <label>E-Mail</label>
-              <input name="email" type="email" required />
+              <input
+                name="email"
+                type="email"
+                required
+                pattern=".+@digitecgalaxus\.ch"
+                title={t(
+                  "Nur E-Mail-Adressen mit @digitecgalaxus.ch sind erlaubt.",
+                  "Only @digitecgalaxus.ch email addresses are allowed.",
+                )}
+              />
             </div>
             <div className="field">
               <label>

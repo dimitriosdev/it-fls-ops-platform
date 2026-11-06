@@ -3,34 +3,29 @@
 import { useActionState } from "react";
 import { loginAction, type LoginState } from "./actions";
 
-export function LoginForm() {
+export function LoginForm({ lang }: { lang: "de" | "en" }) {
   const [state, action, pending] = useActionState<LoginState, FormData>(loginAction, {});
+  const t = (de: string, en: string) => (lang === "en" ? en : de);
 
   return (
-    <form action={action} style={{ display: "grid", gap: 12, width: 320 }}>
+    <form action={action}>
       <label>
-        Email
-        <input
-          name="email"
-          type="email"
-          autoComplete="email"
-          required
-          style={{ width: "100%" }}
-        />
+        {t("E-Mail", "Email")}
+        <input name="email" type="email" autoComplete="email" required />
       </label>
       <label>
-        Password
-        <input
-          name="password"
-          type="password"
-          autoComplete="current-password"
-          required
-          style={{ width: "100%" }}
-        />
+        {t("Passwort", "Password")}
+        <input name="password" type="password" autoComplete="current-password" required />
       </label>
-      {state.error ? <p role="alert">{state.error}</p> : null}
-      <button type="submit" disabled={pending}>
-        {pending ? "Signing in…" : "Login"}
+      {state.error ? (
+        <p className="auth-error" role="alert">
+          {state.error}
+        </p>
+      ) : null}
+      <button className="auth-btn" type="submit" disabled={pending}>
+        {pending
+          ? t("Anmeldung …", "Signing in …")
+          : t("Als Mitarbeiter anmelden", "Sign in as employee")}
       </button>
     </form>
   );

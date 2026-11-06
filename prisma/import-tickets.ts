@@ -86,7 +86,7 @@ async function main() {
   });
 
   const [users, wps, cats, imported] = await Promise.all([
-    prisma.user.findMany({ select: { id: true, name: true } }),
+    prisma.user.findMany({ select: { id: true, name: true, email: true } }),
     prisma.workplace.findMany({ select: { id: true, name: true } }),
     prisma.category.findMany({ select: { id: true, name: true } }),
     prisma.ticket.findMany({
@@ -95,6 +95,12 @@ async function main() {
     }),
   ]);
   const userId = new Map(users.map((u) => [u.name, u.id]));
+  // Also match by derived email so the seeded admin ("Dimitrios") owns "Dimitrios Metozis" rows.
+  const idByEmail = new Map(users.map((u) => [u.email, u.id]));
+  for (const name of [...supporters, ...reporters]) {
+    const byEmail = idByEmail.get(nameToEmail(name));
+    if (!userId.has(name) && byEmail) userId.set(name, byEmail);
+  }
   const workplaceId = new Map(wps.map((w) => [w.name, w.id]));
   const categoryId = new Map(cats.map((c) => [c.name, c.id]));
   const alreadyImported = new Set(imported.map((t) => t.sourceMessageId));
@@ -107,6 +113,29 @@ async function main() {
     await prisma.ticket.updateMany({
       where: { sourceMessageId: r.messageId, timeSpentMinutes: null },
       data: { timeSpentMinutes: r.minutes },
+    });
+  }
+
+  // Backfill assignee on tickets imported before the name/email matching existed.
+  for (const r of rows.filter((r) => alreadyImported.has(r.messageId))) {
+    const supporterId = userId.get(r.resolvedBy.trim());
+    if (!supporterId) continue;
+    const t = await prisma.ticket.findFirst({
+      where: { sourceMessageId: r.messageId, assignedSupporterId: null },
+      select: { id: true },
+    });
+    if (!t) continue;
+    await prisma.ticket.update({
+      where: { id: t.id },
+      data: { assignedSupporterId: supporterId },
+    });
+    await prisma.ticketHistory.updateMany({
+      where: {
+        ticketId: t.id,
+        actorId: null,
+        action: { in: ["ASSIGNED", "RESOLVED", "CLOSED"] },
+      },
+      data: { actorId: supporterId },
     });
   }
 

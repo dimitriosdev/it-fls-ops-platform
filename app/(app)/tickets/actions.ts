@@ -9,6 +9,7 @@ import {
   reopenTicket,
   reporterResolveTicket,
   resolveTicket,
+  updateReporterTicketDetails,
   type TicketResult,
 } from "@/src/server/tickets";
 import { requireUser } from "@/src/lib/auth/authorization";
@@ -80,6 +81,22 @@ export async function assignAction(formData: FormData): Promise<void> {
     ticket.ticketNumber,
     await assignTicket({ ticketId: ticket.id, supporterId: formData.get("supporterId") }),
   );
+}
+
+export async function updateReporterTicketDetailsAction(
+  _prev: FormState,
+  formData: FormData,
+): Promise<FormState> {
+  const ticket = await idForNumber(formData.get("ticketNumber"));
+  if (!ticket) return { error: "Ticket not found." };
+  const result = await updateReporterTicketDetails({
+    ticketId: ticket.id,
+    description: formData.get("description"),
+    workplace: formData.get("workplace"),
+    category: formData.get("category"),
+  });
+  if (!result.ok) return { error: result.error };
+  redirect(`/tickets/${ticket.ticketNumber}`);
 }
 
 export async function resolveTicketAction(

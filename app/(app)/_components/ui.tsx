@@ -3,6 +3,7 @@ import type { ReactNode } from "react";
 import { TicketStatus } from "@/src/generated/prisma/enums";
 import type { Lang } from "@/src/lib/i18n";
 import type { TicketListItem } from "@/src/server/queries";
+import TopbarTitle from "./TopbarTitle";
 
 const STATUS: Record<TicketStatus, { cls: string; de: string; en: string }> = {
   NEW: { cls: "b-new", de: "Neu", en: "New" },
@@ -50,11 +51,8 @@ export function PageHead({
           ← {back.label}
         </Link>
       )}
-      <div className="pagehead">
-        <div>
-          <h1>{title}</h1>
-          {sub ? <div className="sub">{sub}</div> : null}
-        </div>
+      <div className="pagehead no-title">
+        <TopbarTitle title={title} sub={sub} />
         {action}
       </div>
     </>
@@ -102,7 +100,7 @@ export function TicketTable({
   if (rows.length === 0) {
     return (
       <div className="empty">
-        {en ? "No incidents found." : "Keine Ereignisse gefunden."}
+        {en ? "No tickets found." : "Keine Ereignisse gefunden."}
       </div>
     );
   }
@@ -127,46 +125,83 @@ export function TicketTable({
   };
 
   return (
-    <div className="tablewrap">
-      <table>
-        <thead>
-          <tr>
-            {head("ticketNumber", "ID")}
-            {head("createdAt", en ? "Created" : "Erstellt")}
-            {head(null, en ? "Description" : "Beschreibung")}
-            {head(null, en ? "Workplace" : "Arbeitsplatz")}
-            {head(null, en ? "Category" : "Kategorie")}
-            {head("status", "Status")}
-            {head(null, en ? "Assigned to" : "Zugewiesen an")}
-          </tr>
-        </thead>
-        <tbody>
-          {rows.map((t) => (
-            <tr key={t.id} className="incident-row">
-              <td>
-                <Link href={`/tickets/${t.ticketNumber}`}>
-                  {ticketRef(t.ticketNumber)}
-                </Link>
-              </td>
-              <td>{formatDate(t.createdAt)}</td>
-              <td>
-                {t.description.length > 140
-                  ? `${t.description.slice(0, 140)}…`
-                  : t.description}
-              </td>
-              <td>{t.workplace.name}</td>
-              <td>{t.category.name}</td>
-              <td>
-                <Badge status={t.status} lang={lang} />
-              </td>
-              <td>
-                {t.assignedSupporter?.name ?? (en ? "Unassigned" : "Nicht zugewiesen")}
-              </td>
+    <>
+      <div className="tablewrap ticket-table-desktop">
+        <table>
+          <thead>
+            <tr>
+              {head("ticketNumber", "ID")}
+              {head("createdAt", en ? "Created" : "Erstellt")}
+              {head(null, en ? "Description" : "Beschreibung")}
+              {head(null, en ? "Workplace" : "Arbeitsplatz")}
+              {head(null, en ? "Category" : "Kategorie")}
+              {head("status", "Status")}
+              {head(null, en ? "Assigned to" : "Zugewiesen an")}
             </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
+          </thead>
+          <tbody>
+            {rows.map((t) => (
+              <tr key={t.id} className="incident-row">
+                <td>
+                  <Link href={`/tickets/${t.ticketNumber}`}>
+                    {ticketRef(t.ticketNumber)}
+                  </Link>
+                </td>
+                <td>{formatDate(t.createdAt)}</td>
+                <td>
+                  {t.description.length > 140
+                    ? `${t.description.slice(0, 140)}…`
+                    : t.description}
+                </td>
+                <td>{t.workplace.name}</td>
+                <td>{t.category.name}</td>
+                <td>
+                  <Badge status={t.status} lang={lang} />
+                </td>
+                <td>
+                  {t.assignedSupporter?.name ?? (en ? "Unassigned" : "Nicht zugewiesen")}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      <div className="ticket-cards">
+        {rows.map((t) => (
+          <Link
+            className="ticket-card"
+            href={`/tickets/${t.ticketNumber}`}
+            key={t.id}
+            aria-label={`${ticketRef(t.ticketNumber)}: ${t.description}`}
+          >
+            <div className="ticket-card-heading">
+              <Badge status={t.status} lang={lang} />
+            </div>
+            <p className="ticket-card-description">
+              {t.description.length > 140
+                ? `${t.description.slice(0, 140)}…`
+                : t.description}
+            </p>
+            <dl className="ticket-card-facts">
+              <div>
+                <dt>{en ? "Workplace" : "Arbeitsplatz"}</dt>
+                <dd>{t.workplace.name}</dd>
+              </div>
+              <div>
+                <dt>{en ? "Category" : "Kategorie"}</dt>
+                <dd>{t.category.name}</dd>
+              </div>
+              <div className="ticket-card-assignee">
+                <dt>{en ? "Assigned to" : "Zugewiesen an"}</dt>
+                <dd>
+                  {t.assignedSupporter?.name ?? (en ? "Unassigned" : "Nicht zugewiesen")}
+                </dd>
+              </div>
+            </dl>
+          </Link>
+        ))}
+      </div>
+    </>
   );
 }
 

@@ -37,19 +37,27 @@ enum NotificationType {
   GENERAL
 }
 
+enum InventoryOrderStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
 model User {
-  id                  String          @id @default(cuid())
-  email               String          @unique @db.VarChar(320)
-  name                String          @db.VarChar(200)
-  role                UserRole        @default(REPORTER)
-  isActive            Boolean         @default(true)
-  createdAt           DateTime        @default(now())
-  updatedAt           DateTime        @updatedAt
-  reportedTickets     Ticket[]        @relation("TicketReporter")
-  assignedTickets     Ticket[]        @relation("TicketAssignee")
-  historyEntries      TicketHistory[] @relation("HistoryActor")
-  uploadedAttachments Attachment[]    @relation("AttachmentUploader")
+  id                  String           @id @default(cuid())
+  email               String           @unique @db.VarChar(320)
+  name                String           @db.VarChar(200)
+  role                UserRole         @default(REPORTER)
+  isActive            Boolean          @default(true)
+  createdAt           DateTime         @default(now())
+  updatedAt           DateTime         @updatedAt
+  reportedTickets     Ticket[]         @relation("TicketReporter")
+  assignedTickets     Ticket[]         @relation("TicketAssignee")
+  historyEntries      TicketHistory[]  @relation("HistoryActor")
+  uploadedAttachments Attachment[]     @relation("AttachmentUploader")
   notifications       Notification[]
+  inventoryOrders     InventoryOrder[] @relation("InventoryOrderRequester")
+  reviewedOrders      InventoryOrder[] @relation("InventoryOrderReviewer")
 
   @@index([role, isActive])
   @@map("users")
@@ -149,4 +157,26 @@ model Notification {
 
   @@index([userId, readAt, createdAt])
   @@index([ticketId])
+}
+
+model InventoryOrder {
+  id             String               @id @default(cuid())
+  requesterId    String
+  itemId         String               @db.VarChar(100)
+  itemName       String               @db.VarChar(200)
+  quantity       Int
+  businessReason String               @db.Text
+  notes          String?              @db.Text
+  status         InventoryOrderStatus @default(PENDING)
+  reviewComment  String?              @db.Text
+  reviewedById   String?
+  createdAt      DateTime             @default(now())
+  updatedAt      DateTime             @updatedAt
+  reviewedAt     DateTime?
+  requester      User                 @relation("InventoryOrderRequester", fields: [requesterId], references: [id], onDelete: Cascade)
+  reviewedBy     User?                @relation("InventoryOrderReviewer", fields: [reviewedById], references: [id], onDelete: SetNull)
+
+  @@index([requesterId, createdAt])
+  @@index([status, createdAt])
+  @@map("inventory_orders")
 }

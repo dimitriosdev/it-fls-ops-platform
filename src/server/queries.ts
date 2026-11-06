@@ -220,30 +220,49 @@ export async function countNewTickets() {
   return prisma.ticket.count({ where: { status: TicketStatus.NEW } });
 }
 
-export async function reporterDashboard(userId: string) {
-  const [active, closedCount, byCategory] = await Promise.all([
-    prisma.ticket.findMany({
-      where: { reporterId: userId, status: { not: TicketStatus.CLOSED } },
-      select: ticketListSelect,
-      orderBy: { createdAt: "desc" },
-      take: 100,
-    }),
-    prisma.ticket.count({ where: { reporterId: userId, status: TicketStatus.CLOSED } }),
+export async function reporterTicketReports(reporterId: string) {
+  const where = { reporterId };
+  const [total, categories, workplaces] = await Promise.all([
+    prisma.ticket.count({ where }),
     prisma.ticket.groupBy({
       by: ["categoryId"],
-      where: { reporterId: userId, status: TicketStatus.CLOSED },
+      where,
       _count: { _all: true },
+      orderBy: { _count: { categoryId: "desc" } },
+      take: 5,
+    }),
+    prisma.ticket.groupBy({
+      by: ["workplaceId"],
+      where,
+      _count: { _all: true },
+      orderBy: { _count: { workplaceId: "desc" } },
+      take: 5,
     }),
   ]);
-  const categories = await prisma.category.findMany({
-    where: { id: { in: byCategory.map((c) => c.categoryId) } },
-    select: { id: true, name: true },
-  });
-  const nameById = new Map(categories.map((c) => [c.id, c.name]));
-  const closedByCategory = byCategory
-    .map((c) => ({ label: nameById.get(c.categoryId) ?? "?", value: c._count._all }))
-    .sort((a, b) => b.value - a.value);
-  return { active, closedCount, closedByCategory };
+  const [categoryNames, workplaceNames] = await Promise.all([
+    prisma.category.findMany({
+      where: { id: { in: categories.map((item) => item.categoryId) } },
+      select: { id: true, name: true },
+    }),
+    prisma.workplace.findMany({
+      where: { id: { in: workplaces.map((item) => item.workplaceId) } },
+      select: { id: true, name: true },
+    }),
+  ]);
+  const categoryNameById = new Map(categoryNames.map((item) => [item.id, item.name]));
+  const workplaceNameById = new Map(workplaceNames.map((item) => [item.id, item.name]));
+
+  return {
+    total,
+    topCategories: categories.map((item) => ({
+      label: categoryNameById.get(item.categoryId) ?? "–",
+      value: item._count._all,
+    })),
+    topWorkplaces: workplaces.map((item) => ({
+      label: workplaceNameById.get(item.workplaceId) ?? "–",
+      value: item._count._all,
+    })),
+  };
 }
 
 function startOfDay(d: Date) {

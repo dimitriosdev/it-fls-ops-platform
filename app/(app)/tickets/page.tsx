@@ -1,5 +1,6 @@
 import Link from "next/link";
-import { TicketStatus, UserRole } from "@/src/generated/prisma/enums";
+import { redirect } from "next/navigation";
+import { UserRole } from "@/src/generated/prisma/enums";
 import { requireUser } from "@/src/lib/auth/authorization";
 import { getLang, pick } from "@/src/lib/i18n";
 import {
@@ -12,7 +13,8 @@ import {
   type ListMode,
   type TicketFilters,
 } from "@/src/server/queries";
-import { PageHead, TicketTable, statusLabel } from "../_components/ui";
+import { PageHead, TicketTable } from "../_components/ui";
+import AutoFilterForm from "../_components/AutoFilterForm";
 
 export const dynamic = "force-dynamic";
 
@@ -26,6 +28,7 @@ export default async function TicketsPage({
   searchParams: Promise<Params>;
 }) {
   const user = await requireUser();
+  if (user.role === UserRole.REPORTER) redirect("/dashboard");
   const lang = await getLang();
   const t = (de: string, en: string) => pick(lang, de, en);
   const sp = await searchParams;
@@ -33,12 +36,10 @@ export default async function TicketsPage({
 
   const modeParam = one(sp.mode);
   const mode: ListMode = LIST_MODES.find((m) => m === modeParam) ?? "all";
-  const statusParam = one(sp.status);
   const sortParam = one(sp.sort);
   const filters: TicketFilters = {
     mode,
     q: one(sp.q)?.slice(0, 100),
-    status: Object.values(TicketStatus).find((s) => s === statusParam),
     workplace: one(sp.workplace),
     category: one(sp.category),
     // Supporters default to their own tickets, like the previous demo.
@@ -67,7 +68,6 @@ export default async function TicketsPage({
     const base: Record<string, string | undefined> = {
       mode: filters.mode === "all" ? undefined : filters.mode,
       q: filters.q,
-      status: filters.status,
       workplace: filters.workplace,
       category: filters.category,
       assignee: sp.assignee === undefined ? undefined : (filters.assignee ?? ""),
@@ -91,19 +91,12 @@ export default async function TicketsPage({
   return (
     <main className="content">
       <PageHead
-        title={t("Ereignisse", "Incidents")}
+        title={t("Ereignisse", "Tickets")}
         sub={t(
           "Alle gemeldeten und bearbeiteten Ereignisse.",
           "All reported and handled tickets.",
         )}
       />
-      {user.role === UserRole.REPORTER && (
-        <div className="actionbar">
-          <Link className="btn primary" href="/tickets/new">
-            ＋ {t("Neues Ereignis", "New incident")}
-          </Link>
-        </div>
-      )}
       <div className="pilltabs incident-view-tabs">
         {LIST_MODES.map((m) => (
           <Link
@@ -115,23 +108,15 @@ export default async function TicketsPage({
           </Link>
         ))}
       </div>
-      <form className="filters" method="get">
-        {filters.mode !== "all" && (
-          <input type="hidden" name="mode" value={filters.mode} />
-        )}
+      <AutoFilterForm className="filters">
+        <input type="hidden" name="mode" value={filters.mode} />
         <input
+          type="search"
           name="q"
           defaultValue={filters.q}
           placeholder={t("Suchen …", "Search …")}
+          aria-label={t("Ereignisse suchen", "Search tickets")}
         />
-        <select name="status" defaultValue={filters.status ?? ""}>
-          <option value="">{t("Alle Status", "All statuses")}</option>
-          {Object.values(TicketStatus).map((s) => (
-            <option key={s} value={s}>
-              {statusLabel(s, lang)}
-            </option>
-          ))}
-        </select>
         <select name="workplace" defaultValue={filters.workplace ?? ""}>
           <option value="">{t("Alle Arbeitsplätze", "All workplaces")}</option>
           {lk.workplaces.map((w) => (
@@ -155,13 +140,7 @@ export default async function TicketsPage({
             ))}
           </select>
         )}
-        <button className="btn" type="submit">
-          {t("Filtern", "Filter")}
-        </button>
-        <Link className="btn" href={staff ? "/tickets?assignee=" : "/tickets"}>
-          {t("Zurücksetzen", "Reset")}
-        </Link>
-      </form>
+      </AutoFilterForm>
       <TicketTable
         rows={items}
         lang={lang}
@@ -177,8 +156,7 @@ export default async function TicketsPage({
         }}
       />
       <p className="sub" style={{ marginTop: 12 }}>
-        {total} {t("Ereignisse", "incidents")} · {t("Seite", "Page")} {filters.page}/
-        {pages}
+        {total} {t("Ereignisse", "Tickets")} · {t("Seite", "Page")} {filters.page}/{pages}
       </p>
       {pages > 1 && (
         <div className="formactions" style={{ justifyContent: "flex-start" }}>

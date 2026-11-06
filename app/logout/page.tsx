@@ -1,12 +1,19 @@
+import { getLang, pick } from "@/src/lib/i18n";
+import { AuthShell } from "../AuthShell";
 import { logoutAction } from "../login/actions";
 
-export default function LogoutPage() {
+export const dynamic = "force-dynamic";
+
+export default async function LogoutPage() {
+  const lang = await getLang();
   return (
-    <main style={{ display: "grid", placeItems: "center", minHeight: "100vh" }}>
+    <AuthShell title={pick(lang, "Tschüss", "Goodbye")}>
+      <p>{pick(lang, "Möchtest du dich abmelden?", "Do you want to sign out?")}</p>
       <form action={logoutAction}>
-        <h1>Logout</h1>
-        <button type="submit">Sign out</button>
+        <button className="auth-btn" type="submit">
+          {pick(lang, "Abmelden", "Sign out")}
+        </button>
       </form>
-    </main>
+    </AuthShell>
   );
 }

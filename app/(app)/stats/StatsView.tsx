@@ -16,7 +16,7 @@ export function StatsView({ payload }: { payload: Payload }): React.JSX.Element 
   const data = useStatsData(payload);
 
   return (
-    <main style={{ background: "#f4f6f7", minHeight: "100vh", padding: "24px 20px" }}>
+    <main className="content">
       <LangContext.Provider value={lang}>
         <div style={{ maxWidth: 1200, margin: "0 auto" }}>
           <div

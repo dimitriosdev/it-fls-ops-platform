@@ -5,7 +5,8 @@ import { requireUser } from "@/src/lib/auth/authorization";
 import { getLang, pick } from "@/src/lib/i18n";
 import { countNewTickets, isStaff } from "@/src/server/queries";
 import logoMark from "../../assets/images/logo-dg-erp-mark-only.0e1f217bc91f66520a3db5a640b33c5c.svg";
-import NavLinks, { type NavItem } from "./_components/NavLinks";
+import NavMenu from "./_components/NavMenu";
+import type { NavItem } from "./_components/NavLinks";
 import UserMenu from "./_components/UserMenu";
 
 export const dynamic = "force-dynamic";
@@ -18,16 +19,25 @@ export default async function AppLayout({ children }: Readonly<{ children: React
   const logo = logoMark.src || String(logoMark);
   const newCount = staff ? await countNewTickets() : 0;
 
-  const nav: NavItem[] = [
-    { href: "/dashboard", label: "Dashboard" },
-    { href: "/tickets", label: t("Ereignisse", "Incidents") },
-    ...(user.role === UserRole.REPORTER
-      ? [{ href: "/tickets/new", label: t("Neues Ereignis", "New incident") }]
-      : []),
-    ...(staff ? [{ href: "/stats", label: t("Berichte", "Reports") }] : []),
-    ...(user.role === UserRole.ADMIN
-      ? [{ href: "/admin", label: t("Einstellungen", "Settings") }]
-      : []),
+  const nav: NavItem[] =
+    user.role === UserRole.REPORTER
+      ? [
+          { href: "/dashboard", label: "Dashboard" },
+          { href: "/reports", label: t("Berichte", "Reports") },
+        ]
+      : user.role === UserRole.SUPPORTER
+        ? [
+            { href: "/dashboard", label: "Dashboard" },
+            { href: "/stats", label: t("Berichte", "Reports") },
+          ]
+        : [
+            { href: "/dashboard", label: "Dashboard" },
+            { href: "/stats", label: t("Berichte", "Reports") },
+            { href: "/admin", label: t("Einstellungen", "Settings") },
+          ];
+  const inventoryNav: NavItem[] = [
+    { href: "/inventory", label: t("Dashboard", "Dashboard") },
+    { href: "/inventory/request", label: t("Bestellung anfragen", "Request order") },
   ];
   const roleLabel =
     user.role === UserRole.ADMIN
@@ -46,15 +56,9 @@ export default async function AppLayout({ children }: Readonly<{ children: React
             <img className="logo" src={logo} alt="" />
             <span>IT FLS</span>
           </div>
-          <nav className="primary-nav" aria-label="Workspace navigation">
-            <div className="menu-group" data-open="true">
-              <div className="primary-nav-item">
-                <span>Tickets</span>
-              </div>
-              <div className="menu-children">
-                <NavLinks items={nav} />
-              </div>
-            </div>
+          <nav className="primary-nav" aria-label="Primary navigation">
+            <NavMenu label="Tickets" items={nav} />
+            {staff && <NavMenu label={t("Inventar", "Inventory")} items={inventoryNav} />}
           </nav>
           <div className="aside-foot">IT FLS Operations Platform</div>
         </aside>
@@ -65,13 +69,20 @@ export default async function AppLayout({ children }: Readonly<{ children: React
               <img className="logo" src={logo} alt="" />
               <span>IT FLS</span>
             </Link>
-            <div className="topbar-title" />
+            <div className="topbar-title" id="topbar-title" />
             <div className="topright">
+              {user.role === UserRole.REPORTER && (
+                <Link className="btn primary reporter-new-ticket" href="/tickets/new">
+                  ＋ {t("Neues Ereignis", "New ticket")}
+                </Link>
+              )}
               {staff && (
                 <Link
                   className="bell"
-                  href="/tickets?mode=new"
-                  aria-label={t("Neue Ereignisse", "New incidents")}
+                  href={
+                    user.role === UserRole.SUPPORTER ? "/dashboard" : "/tickets?mode=new"
+                  }
+                  aria-label={t("Neue Ereignisse", "New tickets")}
                   style={{ textDecoration: "none" }}
                 >
                   🔔
